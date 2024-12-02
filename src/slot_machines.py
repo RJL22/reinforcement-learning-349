@@ -2,7 +2,7 @@ import numpy as np
 import gymnasium
 from gymnasium import spaces
 from gymnasium.utils import seeding
-import src.localrandom
+import src.random
 
 
 class SlotMachine:
@@ -11,7 +11,7 @@ class SlotMachine:
         self.std_dev = std_dev
 
     def pull(self):
-        return src.localrandom.normal(loc=self.mean, scale=self.std_dev)
+        return src.random.normal(loc=self.mean, scale=self.std_dev)
 
 
 class SlotMachines(gymnasium.Env):
@@ -26,11 +26,11 @@ class SlotMachines(gymnasium.Env):
 
     def __init__(self, n_machines=10, mean_range=(-10, 10), std_range=(5, 10)):
         # Initialize N slot machines with random means and std_devs
-        means = src.localrandom.uniform(low=mean_range[0], high=mean_range[1], size=n_machines)
+        means = src.random.uniform(low=mean_range[0], high=mean_range[1], size=n_machines)
         for i in range(n_machines):
             if means[i] == np.max(means) and i != np.argmax(means):
                 means[i] -= 1
-        std_devs = src.localrandom.uniform(low=std_range[0], high=std_range[1], size=n_machines)
+        std_devs = src.random.uniform(low=std_range[0], high=std_range[1], size=n_machines)
         self.machines = [SlotMachine(m, s) for (m, s) in zip(means, std_devs)]
 
         # Required by OpenAI Gym

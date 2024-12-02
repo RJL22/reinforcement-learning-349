@@ -2,8 +2,6 @@ import itertools
 import numpy as np
 import os
 import sys
-
-# sys.path.append('/Users/ryanlee/Documents/CS_349/HW#4')
 import src
 
 

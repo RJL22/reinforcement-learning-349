@@ -1,5 +1,5 @@
 import numpy as np
-import src.localrandom
+import src.random
 
 
 class MultiArmedBandit:
@@ -93,16 +93,16 @@ class MultiArmedBandit:
             action = None
 
             #Determining the action
-            decision_threshold = src.localrandom.uniform(0)
+            decision_threshold = src.random.uniform(low=0.0, high=1.0)
             if decision_threshold <= 1 - self.epsilon:
-                max_reward = max(Q)
+                max_reward = max(self.Q)
                 #Getting indices of actions that yield max reward
-                max_actions = [i for i, reward in enumerate(Q) if reward == max_reward]
-                action = src.localrandom.choice(max_actions)
+                max_actions = [i for i, reward in enumerate(self.Q) if reward == max_reward]
+                action = src.random.choice(max_actions)
                 pass
             else:
                 #Explore; choosing a random action
-                action = src.localrandom.choice(range(n_actions))
+                action = src.random.choice(list(range(n_actions)))
                 pass
             
             #Taking action
@@ -122,12 +122,25 @@ class MultiArmedBandit:
         #Constructing averaged rewards
         i = 0
         num_steps = int(np.ceil(steps / num_bins))
-        while (i + 1) * num_steps <= len(all_rewards) - 1:
-            start_index = i * num_steps
-            stop_index = (i + 1) * num_steps
-            averaged_reward = sum(all_rewards[start_index:stop_index]) / num_steps
-            avg_rewards[i] = averaged_reward
-            i += 1
+        #All but last bin
+        # while (i + 1) * num_steps <= len(all_rewards) - 1:
+        #     start_index = i * num_steps
+        #     stop_index = (i + 1) * num_steps
+        #     averaged_reward = sum(all_rewards[start_index:stop_index]) / num_steps
+        #     avg_rewards[i] = averaged_reward
+        #     i += 1
+        # #Last bin
+        # avg_rewards[i] = sum(all_rewards[((i + 1) * num_steps):])
+
+        #Computing averaged rewards for all but the last bin
+        for bin in range(num_bins - 1):
+            start_index = bin * num_steps
+            stop_index = (bin + 1) * num_steps
+            avg_rewards[bin] = sum(all_rewards[start_index:stop_index]) / num_steps
+        #Computing averaged reward for last bin
+        last_bin_start_index = (num_bins - 1) * num_steps
+        last_bin_size = len(all_rewards) - last_bin_start_index
+        avg_rewards[num_bins - 1] = sum(all_rewards[last_bin_start_index:]) / last_bin_size
         
         return state_action_values, avg_rewards
             
@@ -174,5 +187,17 @@ class MultiArmedBandit:
         """
         # reset environment before your first action
         env.reset()
+
+        states = []
+        actions = []
+        rewards = []
+        terminated = False
+        truncated = False 
+        action = None
+
+        while not terminated and not truncated:
+            
+            next_obs, reward, terminated, truncated, info = env.step(action)
+
 
         raise NotImplementedError

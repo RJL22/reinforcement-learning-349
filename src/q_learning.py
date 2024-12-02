@@ -1,5 +1,5 @@
 import numpy as np
-import src.localrandom
+import src.random
 
 
 class QLearning:

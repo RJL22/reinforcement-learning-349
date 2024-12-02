@@ -52,5 +52,3 @@ class SimpleEnv(gymnasium.Env):
         """
         pass
     
-
-print("Hello")
