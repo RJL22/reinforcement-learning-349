@@ -84,6 +84,9 @@ class MultiArmedBandit:
         avg_rewards = np.zeros([num_bins])
         all_rewards = []
 
+        #Number of times each action has been taken
+        action_counter = np.zeros(n_actions)
+
         # reset environment before your first action
         env.reset()
     
@@ -106,11 +109,12 @@ class MultiArmedBandit:
                 pass
             
             #Taking action
+            action_counter[action] += 1
             next_obs, reward, terminated, truncated, info = env.step(action)
 
             #Updating reward
-            self.Q[action] = reward
             all_rewards.append(reward)
+            self.Q[action] = self.Q[action] + ((1 / action_counter[action]) * (reward - self.Q[action]))
 
             #Reset environment if necessary
             if terminated or truncated:
@@ -120,17 +124,7 @@ class MultiArmedBandit:
         state_action_values = np.tile(self.Q, (n_states, 1))
 
         #Constructing averaged rewards
-        i = 0
         num_steps = int(np.ceil(steps / num_bins))
-        #All but last bin
-        # while (i + 1) * num_steps <= len(all_rewards) - 1:
-        #     start_index = i * num_steps
-        #     stop_index = (i + 1) * num_steps
-        #     averaged_reward = sum(all_rewards[start_index:stop_index]) / num_steps
-        #     avg_rewards[i] = averaged_reward
-        #     i += 1
-        # #Last bin
-        # avg_rewards[i] = sum(all_rewards[((i + 1) * num_steps):])
 
         #Computing averaged rewards for all but the last bin
         for bin in range(num_bins - 1):
@@ -196,8 +190,15 @@ class MultiArmedBandit:
         action = None
 
         while not terminated and not truncated:
-            
+            #Finding the next action; note that the best action is independent of the state in this case
+            action_rewards = state_action_values[0]
+            max_reward = max(action_rewards)
+            best_action_indices = [i for i, reward in enumerate(action_rewards) if reward == max_reward]
+            action = src.random.choice(best_action_indices)
+
             next_obs, reward, terminated, truncated, info = env.step(action)
-
-
-        raise NotImplementedError
+            states.append(next_obs)
+            actions.append(action)
+            rewards.append(reward)
+        
+        return states, actions, rewards
