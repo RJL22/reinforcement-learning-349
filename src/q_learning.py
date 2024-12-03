@@ -21,7 +21,7 @@ class QLearning:
         (http://incompleteideas.net/book/RLbook2020.pdf).  
     """
 
-    def __init__(self, epsilon=0.2, alpha=0.5, gamma=0.5):
+    def __init__(self, epsilon=0.2, alpha=0.3, gamma=0.5):
         self.epsilon = epsilon
         self.alpha = alpha
         self.gamma = gamma
@@ -94,7 +94,51 @@ class QLearning:
 
         current_state, _ = env.reset()
 
-        raise NotImplementedError
+        for i in range(steps):
+            action = None
+            decision_threshold = src.random.uniform(low=0.0, high=1.0)
+
+            #Choosing action
+            if decision_threshold <= 1 - self.epsilon:
+                max_reward = max(state_action_values[current_state])
+                #Getting indices of actions that yield max reward
+                max_actions = [i for i, reward in enumerate(state_action_values[current_state]) if reward == max_reward]
+                action = src.random.choice(max_actions)
+                pass
+            else:
+                #Explore; choosing a random action
+                action = src.random.choice(list(range(n_actions)))
+                pass
+            
+            #Saving state
+            temp_state = current_state
+            #Taking action
+            current_state, reward, terminated, truncated, info = env.step(action)
+            all_rewards.append(reward)
+
+            #Getting reward of best action in new state
+            best_next_action_reward = max(state_action_values[current_state])
+            #Updating reward
+            state_action_values[temp_state][action] += self.alpha * (reward + (self.gamma * best_next_action_reward) - state_action_values[temp_state][action])
+
+            #Reset environment if necessary
+            if terminated or truncated:
+                current_state, _ = env.reset()
+
+        #Constructing averaged rewards
+        num_steps = int(np.ceil(steps / num_bins))
+
+          #Computing averaged rewards for all but the last bin
+        for bin in range(num_bins - 1):
+          start_index = bin * num_steps
+          stop_index = (bin + 1) * num_steps
+          avg_rewards[bin] = sum(all_rewards[start_index:stop_index]) / num_steps
+        #Computing averaged reward for last bin
+        last_bin_start_index = (num_bins - 1) * num_steps
+        last_bin_size = len(all_rewards) - last_bin_start_index
+        avg_rewards[num_bins - 1] = sum(all_rewards[last_bin_start_index:]) / last_bin_size
+
+        return state_action_values, avg_rewards
         
     def predict(self, env, state_action_values):
         """
@@ -144,4 +188,22 @@ class QLearning:
 
         # reset environment before your first action
         current_state, _ = env.reset()
-        raise NotImplementedError
+
+        terminated = False
+        truncated = False
+        action = None
+
+        while not terminated and not truncated:
+            action_rewards = state_action_values[current_state]
+            max_reward = max(action_rewards)
+            best_action_indices = [i for i, reward in enumerate(action_rewards) if reward == max_reward]
+            action = src.random.choice(best_action_indices)
+
+            current_state, reward, terminated, truncated, info = env.step(action)
+            states.append(current_state)
+            actions.append(action)
+            rewards.append(reward)
+
+        return states, actions, rewards
+            
+
